@@ -1,0 +1,120 @@
+﻿@inject ERacuniProtoNameSpace.ERacuniProtoServis.ERacuniProtoServisClient ProtoServis
+@using ERacuniProtoNameSpace;
+@using ERacuniNovi.Shared.Models;
+@inject NavigationManager _navigationManager;
+
+<div class="top-row pl-4 navbar navbar-dark">
+    <a class="navbar-brand" href="#">ERacuni</a>
+    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+
+        @*<li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-badge" aria-hidden="true"></span> Računi
+            </NavLink>
+        </li>*@
+
+        @*<li class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-home" aria-hidden="true"></span> Home
+            </NavLink>
+        </li>*@
+
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="posta">
+                <span class="material-icons" aria-hidden="true">
+                    markunread_mailbox
+                </span> &nbsp; &nbsp; Pošta
+
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="kuca">
+                <span class="material-icons">
+                    home
+                </span> &nbsp;&nbsp;   Kuća
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="banka">
+                <span class="material-icons">
+                    account_balance
+                </span>&nbsp;&nbsp;  Banka
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="rashod">
+                <span class="material-icons">
+                    account_balance_wallet
+                </span> &nbsp;&nbsp; Rashod
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="izvestaji">
+                <span class="material-icons">
+                    receipt_long
+                </span>&nbsp;&nbsp; Izveštaji
+            </NavLink>
+        </li>
+        <AuthorizeView>
+            <Authorized>
+
+            </Authorized>
+            <NotAuthorized>
+                <li class="nav-item px-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="oi oi-account-login" aria-hidden="true"></span> Login
+                    </NavLink>
+                </li>
+            </NotAuthorized>
+        </AuthorizeView>
+
+        <AuthorizeView>
+            <Authorized>
+                <li class="nav-item mt-5 px-5">
+                    <MatThemeProvider Theme="@Theme">
+                        <MatButton @onclick="LogOut" Raised="true" TrailingIcon="exit_to_app">Logout</MatButton>
+                    </MatThemeProvider>
+                </li>
+            </Authorized>
+            <NotAuthorized>
+
+            </NotAuthorized>
+        </AuthorizeView>
+
+    </ul>
+
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private string porukaZaPrikaz = string.Empty;
+
+    private async void LogOut()
+    {
+
+        var response = await ProtoServis.LogOutAsync(new EmptyMsg());
+        porukaZaPrikaz = response.Error;
+        _navigationManager.NavigateTo("/login", true);
+        StateHasChanged();
+    }
+
+    MatTheme Theme = new MatTheme
+    {
+        Primary = "#d50000",
+        Secondary = "#d50000"
+    };
+}

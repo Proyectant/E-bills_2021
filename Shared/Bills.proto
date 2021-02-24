@@ -1,0 +1,147 @@
+﻿syntax="proto3";
+option csharp_namespace="BillsNamespace";
+import "google/protobuf/duration.proto";  
+import "google/protobuf/timestamp.proto";
+
+
+message BillMsg{
+string Barcode = 1;
+string Naziv=2;
+google.protobuf.Timestamp DatumSlanja=3;
+google.protobuf.Timestamp DatumPrimanja=4;
+double NabavnaCena=5;
+double ProdajnaCena=6;
+double Postarina=7;
+double Rashod = 8;
+string AdresaMusterije=9;
+double PresekStanja=10;
+bool StatusRacuna = 11;
+int32 WayOfSelling=12;
+int32 ID=13;
+}
+
+message DeleteBillResponse{
+	bool Status =1;
+}
+//BillPostResponse je zajednicki za kucu, postu i banku jer nam kod sva tri upisa 
+//vraca ceo red iz baze
+message BillPostResponse{
+		BillMsg BillResponse = 2;
+		bool IsUpisan = 1;	
+}
+message EmptyMsg{}
+
+message IzvestajBillMsg{
+google.protobuf.Timestamp Start=1;
+google.protobuf.Timestamp End=2;
+string NacinSlanja =3;
+string TipDatuma=4;
+}
+
+// SINTAKSA ZA POSTU
+message PostaBillMsg {
+string Barcode = 1;
+string Naziv=2;
+double NabavnaCena = 3;
+double ProdajnaCena=4;
+double Postarina=5;
+double Rashod = 6;
+bool StatusRacuna = 7;
+string AdresaMusterije=8;
+google.protobuf.Timestamp DatumSlanja=9;
+google.protobuf.Timestamp DatumPrimanja=10;
+}
+
+message ChangeBillPostaResponse{
+BillMsg BillResponse = 2;
+bool IsChanged = 1;
+
+}
+message DeleteBillPostaRequest{
+string  Barcode=1;
+
+}
+message DeleteBillPostaResponse{
+bool Status =1;
+}
+//KRAJ SINTAKSE ZA POSTU
+
+//SINTAKSA ZA RASHOD 
+
+message RashodBillMsg{
+	string Naziv = 1;
+	google.protobuf.Timestamp DatumSlanja=2;
+	double Rashod = 3;
+	int32 ID=4;
+}
+
+message ChangeBillRashodResponse{
+	BillMsg BillResponse = 2;
+	bool IsChanged = 1;
+}
+
+message DeleteBillRequest{
+	int32 ID=1;
+}
+
+message DeleteBillRashodResponse{
+	bool Status=1;
+}
+// KRAJ SINTAKSE ZA RASHOD 
+
+//SINTAKSA ZA KUCU
+
+message KucaBillMsg{
+	int32 ID=1;
+	string Naziv = 2;
+	string AdresaMusterije=3;
+	google.protobuf.Timestamp DatumSlanja=4;
+	double NabavnaCena=5;
+	double ProdajnaCena=6;
+	double Rashod = 7;
+}
+
+
+//KRAJ SINTAKSE ZA KUCU
+
+//SINTAKSA ZA BANKU
+message BankaBillMsg{
+string Naziv=1; //Naziv artikla sta salje
+string AdresaMusterije=2;
+double NabavnaCena=3; //Ono sto mu je uplaceno
+double ProdajnaCena=4; //Ono sto je podigao
+double PresekStanja=5; //KOliko mu je ostalo
+google.protobuf.Timestamp DatumSlanja=6; //kad je prodao
+google.protobuf.Timestamp DatumPrimanja=7; //kad je podigao novac
+}
+//KRAJ SINTAKSE ZA BANKU
+
+service BillProtoServis{
+//rpc metode za POSTU
+rpc AddBillPosta(PostaBillMsg) returns (BillPostResponse);
+rpc ChangeBillPosta(PostaBillMsg) returns (ChangeBillPostaResponse);
+rpc DeleteBillPosta(DeleteBillPostaRequest) returns (DeleteBillPostaResponse);
+rpc GetAllPostaBills(EmptyMsg) returns (stream BillMsg);
+//kraj rpc metoda za POSTU
+
+//rpc metode za RASHOD 
+rpc AddBillRashod(RashodBillMsg) returns (BillPostResponse);
+rpc ChangeBillRashod(RashodBillMsg) returns (ChangeBillRashodResponse);
+rpc DeleteBillRashod(DeleteBillRequest) returns (DeleteBillRashodResponse);
+rpc GetAllRashodBill(EmptyMsg) returns (stream BillMsg);
+//kraj rpc metoda za RASHOD 
+
+//rpc metode za KUCU 
+rpc AddBillKuca(KucaBillMsg) returns (BillPostResponse);
+rpc ChangeBillKuca(KucaBillMsg) returns (BillPostResponse);
+rpc DeleteBill(DeleteBillRequest) returns (DeleteBillResponse);
+rpc GetAllKucaBill(EmptyMsg) returns (stream BillMsg);
+//kraj rpc metoda za KUCU 
+
+//rpc metode za BANKU
+rpc AddBillBanka(BankaBillMsg) returns (BillPostResponse);
+rpc GetAllBankaBills(EmptyMsg) returns (stream BillMsg);
+//kraj rpc metode za BANKU
+
+rpc ListaZaIzvestaj(IzvestajBillMsg) returns (stream BillMsg);
+}

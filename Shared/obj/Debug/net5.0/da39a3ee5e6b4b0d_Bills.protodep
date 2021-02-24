@@ -1,0 +1,4 @@
+obj\Debug\net5.0/Bills.cs \
+obj\Debug\net5.0/BillsGrpc.cs: C:/Users/Proye/.nuget/packages/grpc.tools/2.34.0/build/native/include/google/protobuf/duration.proto\
+ C:/Users/Proye/.nuget/packages/grpc.tools/2.34.0/build/native/include/google/protobuf/timestamp.proto\
+ Bills.proto

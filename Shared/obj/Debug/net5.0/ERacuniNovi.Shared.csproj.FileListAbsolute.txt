@@ -1,0 +1,12 @@
+C:\Users\Proye\Desktop\ERacuni\Shared\bin\Debug\net5.0\ERacuniNovi.Shared.deps.json
+C:\Users\Proye\Desktop\ERacuni\Shared\bin\Debug\net5.0\ERacuniNovi.Shared.dll
+C:\Users\Proye\Desktop\ERacuni\Shared\bin\Debug\net5.0\ref\ERacuniNovi.Shared.dll
+C:\Users\Proye\Desktop\ERacuni\Shared\bin\Debug\net5.0\ERacuniNovi.Shared.pdb
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.csprojAssemblyReference.cache
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.AssemblyInfoInputs.cache
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.AssemblyInfo.cs
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.csproj.CoreCompileInputs.cache
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.dll
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ref\ERacuniNovi.Shared.dll
+C:\Users\Proye\Desktop\ERacuni\Shared\obj\Debug\net5.0\ERacuniNovi.Shared.pdb

@@ -1,0 +1,39 @@
+﻿syntax="proto3";
+option csharp_namespace="ERacuniProtoNameSpace";
+
+
+import "google/protobuf/duration.proto";  
+import "google/protobuf/timestamp.proto";
+
+message UserMsg {
+string firstNameProto=1;
+string lastNameProto=2;
+}
+
+
+service ERacuniProtoServis{
+	rpc Registration (RegistrationMsg) returns (StandardReplyMsg);
+	rpc LogIn (RegistrationMsg) returns (StandardReplyMsg);
+	rpc LogOut (EmptyMsg) returns (StandardReplyMsg);
+	// ovo ispod je dodatak u kome proveravamo u bazi da li ima registrovanih korisnik
+//ako ima onda ne prikazuje formu za registraciju
+//ako nema onda ce da je prikaze 
+rpc ProveriKorisnika (EmptyMsg) returns (StandardReplyMsg);
+
+}
+
+message StandardReplyMsg {
+	bool Success = 1; 
+	string Error=2; 
+}
+message EmptyMsg{}
+
+message RegistrationMsg {
+
+	string Username = 1;
+	string Password = 2;
+	UserMsg UserProto = 3;
+	bool Login = 4;
+}
+
+

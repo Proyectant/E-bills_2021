@@ -1,0 +1,4 @@
+obj\Debug\net5.0/ERacuniNovi.cs \
+obj\Debug\net5.0/ERacuniNoviGrpc.cs: C:/Users/Proye/.nuget/packages/grpc.tools/2.34.0/build/native/include/google/protobuf/duration.proto\
+ C:/Users/Proye/.nuget/packages/grpc.tools/2.34.0/build/native/include/google/protobuf/timestamp.proto\
+ ERacuniNovi.proto

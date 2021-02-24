@@ -1,0 +1,79 @@
+﻿@page "/registration"
+@layout LogInLayout
+@using ERacuniNovi.Shared.Models;
+@using ERacuniProtoNameSpace;
+@inject NavigationManager _navigationManager;
+@inject ERacuniProtoNameSpace.ERacuniProtoServis.ERacuniProtoServisClient ProtoServis
+
+
+<div class="w-full flex flex-wrap">
+
+    <!-- Register Section -->
+    <div class="w-full md:w-1/2 flex flex-col">
+        <div class="flex flex-col justify-center md:justify-start my-auto pt-8 md:pt-0 px-8 md:px-24 lg:px-32">
+            <p class="text-center text-3xl">Pridružite nam se.</p>
+            <form class="flex flex-col pt-3 md:pt-8" onsubmit="event.preventDefault();">
+                <div class="flex flex-col pt-4">
+                    <label for="name" class="text-lg">Ime</label>
+                    <input type="text" id="name" placeholder="Almedin " class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="@userSignUp.firstName">
+                </div>
+
+                <div class="flex flex-col pt-4">
+                    <label for="email" class="text-lg">Prezime</label>
+                    <input type="text" id="surname" placeholder="Ljajić" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="@userSignUp.lastName">
+                </div>
+
+                <div class="flex flex-col pt-4">
+                    <label for="username" class="text-lg">Korisničko ime</label>
+                    <input type="text" id="username" placeholder="AlmedinLjajić" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="@userSignUp.UserName">
+                </div>
+
+                <div class="flex flex-col pt-4">
+                    <label for="password" class="text-lg">Šifra</label>
+                    <input type="password" id="password" placeholder="šifra" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="passwordSignUp">
+                </div>
+
+                <input type="submit" value="Registruj se" class="bg-black text-white font-bold text-lg hover:bg-gray-700 p-2 mt-8" @onclick="SignUp">
+            </form>
+            <div class="text-center pt-12 pb-12">
+                <p>Već imate nalog? <a href="/login" class="underline font-semibold">Ulogujte se ovde</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Section -->
+    <div class="w-1/2 shadow-2xl">
+        <img class="object-cover w-full h-screen hidden md:block" src="images\login_screen.jpg">
+
+    </div>
+</div>
+
+@code {
+    private User userSignUp = new User();
+    private string passwordSignUp = string.Empty;
+    private string porukaZaPrikaz = string.Empty;
+
+    private async void SignUp()
+    {
+        RegistrationMsg signupMsg = new RegistrationMsg();
+
+        signupMsg.Username = userSignUp.UserName;
+        signupMsg.Password = passwordSignUp;
+        signupMsg.UserProto = new UserMsg { FirstNameProto = userSignUp.firstName, LastNameProto = userSignUp.lastName };
+        signupMsg.Login = false;
+        var Response = await ProtoServis.RegistrationAsync(signupMsg);
+        if (!Response.Success)
+        {
+            porukaZaPrikaz = Response.Error;
+        }
+        else
+        {
+            porukaZaPrikaz = "Uspesno ste registrovani";
+            _navigationManager.NavigateTo("/login");
+
+        }
+        StateHasChanged();
+
+    }
+
+}

@@ -1,0 +1,556 @@
+﻿@page "/izvestaji"
+@using ERacuniNovi.Shared.Models
+@using ERacuniNovi.Shared.DTO
+@using BillsNamespace
+@using BlazorDateRangePicker
+@using System.Globalization
+@using Grpc.Core;
+@using Radzen.Blazor
+@using Radzen
+@using ERacuniNovi.Shared.Konvertor
+@using System.Diagnostics
+@inject BillsNamespace.BillProtoServis.BillProtoServisClient ServiceBill
+@inject ConvertGRPC ServiceConvert
+
+<head>
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/default.css" />
+    @*<script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>*@
+</head>
+
+<!-- #region Filterisanje -->
+
+<div>
+    <div class="flex text-center  flex-wrap overflow-hidden p-4 ">
+
+        <div class=" rounded-md  w-full md:w-1/3 lg:w-1/3 xl:w-1/3 sm:py-4 sm:px-4">
+            <div class="md:my-2">
+                <DateRangePicker @ref="Picker" OnRangeSelect="OnRangeSelect"
+                                 Culture="@(System.Globalization.CultureInfo.GetCultureInfo("sr-Latn-RS"))">
+                    <PickerTemplate>
+                        <div id="@context.ParentId" @onclick="context.Toggle" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc;">
+                            <i class="oi oi-calendar"></i>&nbsp;
+                            <span>@context.FormattedRange @(string.IsNullOrEmpty(context.FormattedRange) ? "Izaberite vremenski opseg" : "")</span>
+                            <i class="oi oi-chevron-bottom float-right"></i>
+                        </div>
+                    </PickerTemplate>
+                    <ButtonsTemplate>
+                        <button class="cancelBtn btn btn-sm btn-default"
+                                @onclick="@context.ClickCancel" type="button">
+                            Otkazi
+                        </button>
+                        <button class="applyBtn btn btn-sm btn-primary" @onclick="@context.ClickApply"
+                                disabled="@(context.TStartDate == null || context.TEndDate == null)"
+                                type="button">
+                            Potvrdi
+                        </button>
+                    </ButtonsTemplate>
+                </DateRangePicker>
+            </div>
+            <div>
+                <span> @porukaZaIzabraniPeriod</span>
+            </div>
+        </div>
+
+        <div class=" rounded-md w-full md:w-1/3 lg:w-1/3 xl:w-1/3 sm:py-4 sm:px-4">
+            <RadzenFieldset Text="Način slanja">
+                <RadzenRadioButtonList @bind-Value="izabraniNacinSlanja" TValue="string" Change=@((args) => IsprazniListu())>
+                    <Items>
+
+                        <RadzenRadioButtonListItem Value="@("Banka")" Text="Bankom" TValue="string" />
+                        <RadzenRadioButtonListItem Value="@("Kuca")" Text="Od kuće" TValue="string" />
+                        <RadzenRadioButtonListItem Value="@("Posta")" Text="Poštom" TValue="string" />
+                        <RadzenRadioButtonListItem Value="@("Rashod")" Text="Rashod" TValue="string" />
+                        <RadzenRadioButtonListItem Value="@(string.Empty)" Text="Sve" TValue="string" />
+                    </Items>
+                </RadzenRadioButtonList>
+            </RadzenFieldset>
+        </div>
+
+        <div class=" rounded-md w-full md:w-1/3 lg:w-1/3 xl:w-1/3 sm:py-4 sm:px-4">
+            <RadzenFieldset Text="Željeni datum">
+                @switch (izabraniNacinSlanja.ToLower())
+                {
+                    case "":
+                        {
+                            <RadzenRadioButtonList @bind-Value="izabraniDatumSlanja" TValue="string" Placeholder="Oboje">
+                                <Items>
+                                    <RadzenRadioButtonListItem Value="@("Poslati")" Text="Poslati" TValue="string" />
+                                    <RadzenRadioButtonListItem Value="@("Primljeni")" Text="Primljeni" TValue="string" />
+                                    <RadzenRadioButtonListItem Value="@("Oboje")" Text="Oboje" TValue="string" />
+                                </Items>
+                            </RadzenRadioButtonList>
+
+                        }
+                        break;
+
+                    case "posta":
+                        {
+                            <RadzenRadioButtonList @bind-Value="izabraniDatumSlanja" TValue="string" Placeholder="Oboje">
+                                <Items>
+                                    <RadzenRadioButtonListItem Value="@("Poslati")" Text="Poslati" TValue="string" />
+                                    <RadzenRadioButtonListItem Value="@("Primljeni")" Text="Primljeni" TValue="string" />
+                                    <RadzenRadioButtonListItem Value="@("Oboje")" Text="Oboje" TValue="string" />
+                                </Items>
+                            </RadzenRadioButtonList>
+                        }
+                        break;
+
+                    case "kuca":
+                        {
+                            <RadzenRadioButtonList @bind-Value="izabraniDatumSlanja" TValue="string">
+                                <Items>
+                                    <RadzenRadioButtonListItem Value="@("Primljeni")" Text="Primljeni" TValue="string" />
+                                </Items>
+                            </RadzenRadioButtonList>
+                        }
+                        break;
+
+                    case "banka":
+                        {
+                            <RadzenRadioButtonList @bind-Value="izabraniDatumSlanja" TValue="string">
+                                <Items>
+                                    <RadzenRadioButtonListItem Value="@("Primljeni")" Text="Primljeni" TValue="string" />
+                                </Items>
+                            </RadzenRadioButtonList>
+                        }
+                        break;
+                    case "rashod":
+                        {
+                            <RadzenRadioButtonList @bind-Value="izabraniDatumSlanja" TValue="string">
+                                <Items>
+                                    <RadzenRadioButtonListItem Value="@("Primljeni")" Text="Primljeni" TValue="string" />
+                                </Items>
+                            </RadzenRadioButtonList>
+
+                        }
+                        break;
+
+                }
+            </RadzenFieldset>
+        </div>
+
+        <div class=" rounded-md w-full md:w-1/3 lg:w-1/3 xl:w-1/3 "></div>
+
+        <div class=" rounded-md w-full md:w-1/3 lg:w-1/3 xl:w-1/3 sm:py-4 sm:px-4">
+            <RadzenButton Click="GenerateReport" Text="Generisi Izvestaj" Icon="bar_chart" />
+        </div>
+        <div class=" rounded-md w-full md:w-1/3 lg:w-1/3 xl:w-1/3 "></div>
+        <div class=" rounded-md w-full sm:py-4 sm:px-4">
+            <RadzenFieldset Text="Analiza izveštaja">
+                @switch (izabraniNacinSlanja.ToLower())
+                {
+                    case "":
+                        {
+                            <p style="text-align:left">
+                                Datom odabiru odgovara <b>@ListaRacuna.Count</b>  računa <br />
+                                Ukupna nabavna cena je <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b>  <br />
+                                Ukupna prodajna cena je <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b>  <br />
+                                Ukupni rashodi (poštarina i rashodi) su <b>@ListaRacuna.Sum(b => b.Postarina + b.Rashod)</b>  <br />
+                                Ukupna zarada je <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena - b.Postarina - b.Rashod))</b> 
+                            </p>
+                        }
+                        break;
+
+                    case "posta":
+                        {
+                            <p style="text-align:left">
+                                Datom odabiru odgovara <b>@ListaRacuna.Count</b> računa <br />
+                                Ukupna nabavna cena je <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b> <br />
+                                Ukupna prodajna cena je <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b> <br />
+                                Ukupni rashodi (poštarina i rashodi) su <b>@ListaRacuna.Sum(b => b.Postarina + b.Rashod)</b> <br />
+                                Ukupna zarada je <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena - b.Postarina - b.Rashod))</b>
+                            </p>
+                        }
+                        break;
+
+                    case "kuca":
+                        {
+                            <p style="text-align:left">
+                                Datom odabiru odgovara <b>@ListaRacuna.Count</b> računa <br />
+                                Ukupna nabavna cena je <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b> <br />
+                                Ukupna prodajna cena je <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b> <br />
+                                Ukupni rashodi su <b>@ListaRacuna.Sum(b => b.Rashod)</b> <br />
+                                Ukupna zarada je <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena  - b.Rashod))</b>)
+                            </p>
+                        }
+                        break;
+
+                    case "banka":
+                        {
+            <p style="text-align:left">
+                Datom odabiru odgovara <b>@ListaRacuna.Count</b> računa <br />
+                Ukupna je podignuto <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b> <br />
+                Ukupna je uplaceno <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b> <br />
+                Stanje je  <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena))</b> <br />
+            </p>
+                        }
+                        break;
+                    case "rashod":
+                        {
+                            <p style="text-align:left">
+                                Datom odabiru odgovara <b>@ListaRacuna.Count</b>  računa <br />
+                                Ukupni rashodi su <b>@ListaRacuna.Sum(b => b.Rashod)</b>  <br />
+                            </p>
+
+                        }
+                        break;
+
+                }
+            </RadzenFieldset>
+        </div>
+    </div>
+</div>
+
+<!-- #endregion -->
+<!--
+                        #region Prikazivanje u tabeli -->
+
+<div class=" rounded-md">
+
+    @switch (izabraniNacinSlanja.ToLower())
+    {
+        case "":
+            {
+                <RadzenGrid Data="@ListaRacuna" AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true"
+                            PageSize="18"
+                            AllowSorting="true"
+                            TItem="Bill"
+                            EmptyText="Nema računa u bazi."
+                            ColumnWidth="auto"
+                            @ref="RadzenGrid">
+                    <Columns>
+                        <RadzenGridColumn TItem="Bill" Property="Barcode" Title="Barcode" TextAlign="TextAlign.Left" Width="150px">
+                            <Template Context="bill">
+                                @if (DateTime.Compare(bill.DatumPrimanja, defaultDateTime) == 0) //true ako nije primljeno
+                                {
+                                    @bill.Barcode
+
+                                }
+                                else
+                                {
+                                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="lost_post_office" Size="ButtonSize.Small" />
+                                    @bill.Barcode
+                                }
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Naziv" Title="Naziv racuna" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="WayOfSellingEnum" Title="Nacin Slanja" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="AdresaMusterije" Title="Adresa mušterije" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumSlanja" Title="Datum slanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumPrimanja" Title="Datum primanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="PresekStanja" Title="Presek Stanja" TextAlign="TextAlign.Center" FormatString="{0:#.00}" />
+                        <RadzenGridColumn TItem="Bill" Property="NabavnaCena" Title="Nabavna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="ProdajnaCena" Title="Prodajna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Postarina" Title="Poštarina" TextAlign="TextAlign.Center" Width="auto">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Postarina)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Rashod" Title="Rashod" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Rashod)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Title="Zarada" Width="100px" Bubble="false" Filterable="false" Sortable="false">
+                            <Template Context="bill">
+                                @{Zarada = bill.ProdajnaCena - bill.NabavnaCena - bill.Postarina - bill.Rashod;}
+                                <b>@Zarada</b>
+                            </Template>
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena - b.Postarina - b.Rashod))</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            }
+            break;
+
+        case "posta":
+            {
+                <RadzenGrid Data="@ListaRacuna" AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true"
+                            PageSize="18"
+                            AllowSorting="true"
+                            TItem="Bill"
+                            EmptyText="Nema računa u bazi."
+                            ColumnWidth="auto"
+                            @ref="RadzenGrid">
+                    <Columns>
+                        <RadzenGridColumn TItem="Bill" Property="Barcode" Title="Barcode" TextAlign="TextAlign.Left" Width="150px">
+                            <Template Context="bill">
+                                @if (DateTime.Compare(bill.DatumPrimanja, defaultDateTime) == 0) //true ako nije primljeno
+                                {
+                                    @bill.Barcode
+
+                                }
+                                else
+                                {
+                                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="lost_post_office" Size="ButtonSize.Small" />
+                                    @bill.Barcode
+                                }
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Naziv" Title="Naziv racuna" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="WayOfSellingEnum" Title="Nacin Slanja" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="AdresaMusterije" Title="Adresa mušterije" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumSlanja" Title="Datum slanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumPrimanja" Title="Datum primanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="NabavnaCena" Title="Nabavna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="ProdajnaCena" Title="Prodajna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Postarina" Title="Poštarina" TextAlign="TextAlign.Center" Width="auto">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Postarina)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Rashod" Title="Rashod" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Rashod)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Title="Zarada" Width="100px" Bubble="false" Filterable="false" Sortable="false">
+                            <Template Context="bill">
+                                @{Zarada = bill.ProdajnaCena - bill.NabavnaCena - bill.Postarina - bill.Rashod;}
+                                <b>@Zarada</b>
+                            </Template>
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena - b.Postarina - b.Rashod))</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            }
+            break;
+
+        case "kuca":
+            {
+                <RadzenGrid Data="@ListaRacuna" AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true"
+                            PageSize="20"
+                            AllowSorting="true"
+                            TItem="Bill"
+                            EmptyText="Nema računa u bazi."
+                            ColumnWidth="auto"
+                            @ref="RadzenGrid">
+                    <Columns>
+
+                        <RadzenGridColumn TItem="Bill" Property="Naziv" Title="Naziv racuna" TextAlign="TextAlign.Center">
+                            <Template Context="bill">
+                                @if (DateTime.Compare(bill.DatumPrimanja, defaultDateTime) == 0) //true ako nije primljeno
+                                {
+                                    @bill.Barcode
+
+                                }
+                                else
+                                {
+                                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="lost_post_office" Size="ButtonSize.Small" />
+                                    @bill.Barcode
+                                }
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="WayOfSellingEnum" Title="Nacin Slanja" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="AdresaMusterije" Title="Adresa Musterije" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumSlanja" Title="Datum slanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="NabavnaCena" Title="Nabavna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="ProdajnaCena" Title="Prodajna Cena" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="Rashod" Title="Rashod" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Rashod)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Title="Zarada" Width="100px" Bubble="false" Filterable="false" Sortable="false">
+                            <Template Context="bill">
+                                @{Zarada = bill.ProdajnaCena - bill.NabavnaCena - bill.Rashod;}
+                                <b>@Zarada</b>
+                            </Template>
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => (b.ProdajnaCena - b.NabavnaCena - b.Postarina - b.Rashod))</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+            }
+            break;
+
+        case "banka":
+            {
+                <RadzenGrid Data="@ListaRacuna" AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true"
+                            PageSize="18"
+                            AllowSorting="true"
+                            TItem="Bill"
+                            EmptyText="Nema računa u bazi."
+                            ColumnWidth="auto"
+                            @ref="RadzenGrid">
+                    <Columns>
+                       
+                        <RadzenGridColumn TItem="Bill" Property="Naziv" Title="Naziv racuna" TextAlign="TextAlign.Left">
+                            <Template Context="bill">
+                                @if (bill.Naziv == "UZEO SA RACUNA") // ako je true onda je uplaceno
+                                {
+                                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="trending_up" Size="ButtonSize.Small" />
+                                    @bill.Naziv
+
+                                }
+                                else
+                                {
+                                    <RadzenButton ButtonStyle="ButtonStyle.Warning" Icon="trending_down" Size="ButtonSize.Small" />
+                                    @bill.Naziv
+                                }
+                            </Template>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="WayOfSellingEnum" Title="Nacin Slanja" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="AdresaMusterije" Title="Adresa mušterije" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumSlanja" Title="Datum uplate/isplate" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="NabavnaCena" Title="Podignuto" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.NabavnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="Bill" Property="ProdajnaCena" Title="Uplaceno" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.ProdajnaCena)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                        
+                        
+                        
+                    </Columns>
+                </RadzenGrid>
+            }
+            break;
+        case "rashod":
+            {
+                <RadzenGrid Data="@ListaRacuna" AllowFiltering="true"
+                            FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true"
+                            PageSize="20"
+                            AllowSorting="true"
+                            TItem="Bill"
+                            EmptyText="Nema računa u bazi."
+                            ColumnWidth="auto"
+                            @ref="RadzenGrid">
+                    <Columns>
+
+                        <RadzenGridColumn TItem="Bill" Property="Naziv" Title="Naziv racuna" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="WayOfSellingEnum" Title="Nacin Slanja" TextAlign="TextAlign.Center" />
+                        <RadzenGridColumn TItem="Bill" Property="DatumSlanja" Title="Datum slanja" TextAlign="TextAlign.Center" FormatString="{0:dd/MM/yyyy}" />
+                        <RadzenGridColumn TItem="Bill" Property="Rashod" Title="Rashod" TextAlign="TextAlign.Center">
+                            <FooterTemplate>
+                                <b>@ListaRacuna.Sum(b => b.Rashod)</b>
+                            </FooterTemplate>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenGrid>
+
+            }
+            break;
+
+    }
+
+</div>
+
+<!-- #endregion -->
+
+@code {
+    DateTimeOffset Start;
+    DateTimeOffset End;
+    string startDay;
+    string startMonth;
+    string startYear;
+    string endDay;
+    string endMonth;
+    string endYear;
+    string porukaZaIzabraniPeriod = string.Empty;
+    DateTime defaultDateTime = new DateTime(0001, 1, 1, 0, 0, 0);
+    private Stopwatch sw = new Stopwatch();
+    RadzenGrid<Bill> RadzenGrid;
+    DateRangePicker Picker;
+    private List<Bill> ListaRacuna = new List<Bill>();
+    private double Zarada { get; set; } = 0;
+    string porukaZaKorisnika = string.Empty;
+    private string izabraniNacinSlanja = "Posta";
+    string izabraniDatumSlanja = "Primljeni";
+    bool RadzenPosta;
+    bool RadzenKuca;
+    bool RadzenBanka;
+    bool RadzenRashod;
+    bool RadzenSve;
+
+    public void IsprazniListu()
+    {
+        ListaRacuna = new List<Bill>();
+        izabraniDatumSlanja = "Primljeni";
+        StateHasChanged();
+    }
+
+
+
+
+    public void OnRangeSelect(DateRange range)
+    {
+        Start = range.Start;
+        End = range.End;
+        startDay = range.Start.Day.ToString();
+        startMonth = range.Start.Month.ToString();
+        startYear = range.Start.Year.ToString();
+
+        endDay = range.End.Day.ToString();
+        endMonth = range.End.Month.ToString();
+        endYear = range.End.Year.ToString();
+        porukaZaIzabraniPeriod = $"izabrali ste period od  {startDay} . {startMonth} . {startYear}  do {endDay} .{endMonth} . {endYear}";
+
+    }
+
+    public async void GenerateReport()
+    {
+        ListaRacuna = new List<Bill>();
+        KlasaIzvestaj OdabirZaSlanje = new KlasaIzvestaj();
+        OdabirZaSlanje.Start = Start.DateTime;
+        OdabirZaSlanje.End = End.DateTime;
+        OdabirZaSlanje.NacinSlanja = izabraniNacinSlanja;
+        OdabirZaSlanje.TipDatuma = izabraniDatumSlanja;
+
+        var serverStream = ServiceBill.ListaZaIzvestaj(ServiceConvert.ConvertIzvestaj(OdabirZaSlanje));
+        StateHasChanged();
+        sw.Start();
+        await foreach (var item in serverStream.ResponseStream.ReadAllAsync())
+        {
+            ListaRacuna.Add(ServiceConvert.ConvertCeoRacun(item));
+        }
+        sw.Stop();
+        Console.WriteLine(ListaRacuna.Count());
+        StateHasChanged();
+
+    }
+
+
+}

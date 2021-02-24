@@ -1,0 +1,14 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=_CHANGE_ME;Trusted_Connection=True;MultipleActiveResultSets=true"
+  },
+  "scripts": {
+    "buildcss": "postcss wwwroot/app.css -o wwwroot/css/tailwind.min.css"
+  },
+  "dependencies": {
+    "autoprefixer": "^10.2.1",
+    "postcss": "^8.2.3",
+    "postcss-cli": "^8.3.1",
+    "tailwindcss": "^2.0.2"
+  }
+}

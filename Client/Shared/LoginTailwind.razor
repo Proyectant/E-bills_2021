@@ -1,0 +1,87 @@
+﻿@page "/login"
+@layout LogInLayout
+@using ERacuniNovi.Shared.Models;
+@using ERacuniProtoNameSpace;
+@inject NavigationManager _navigationManager;
+@inject ERacuniProtoNameSpace.ERacuniProtoServis.ERacuniProtoServisClient ProtoServis
+
+
+<div class="w-full flex flex-wrap">
+
+    <!-- Login Section -->
+    <div class="w-full md:w-1/2 flex flex-col">
+
+        <div class="flex flex-col justify-center md:justify-start my-auto pt-8 md:pt-0 px-8 md:px-24 lg:px-32">
+            <p class="text-center text-3xl">Dobro došli.</p>
+            <form class="flex flex-col pt-3 md:pt-8" onsubmit="event.preventDefault();">
+                <div class="flex flex-col pt-4">
+                    <label for="text" class="text-lg">Korisničko ime</label>
+                    <input type="text" id="text" placeholder="Vaše korisničko ime" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="@userLogIn.UserName">
+                </div>
+
+                <div class="flex flex-col pt-4">
+                    <label for="password" class="text-lg">Šifra</label>
+                    <input type="password" id="password" placeholder="Šifra" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mt-1 leading-tight focus:outline-none focus:shadow-outline" @bind-value="@passwordLogIn">
+                </div>
+
+                <input type="submit" value="Log In" class="bg-black text-white font-bold text-lg hover:bg-gray-700 p-2 mt-8" @onclick="LogIn">
+            </form>
+            @if (ShowRegistration)
+            {
+                <div class="text-center pt-12 pb-12">
+                    <p>Nemate nalog? <a href="/registration" class="underline font-semibold">Registrujte se ovde.</a></p>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- Image Section -->
+    <div class="w-1/2 shadow-2xl">
+        
+        <img class="object-cover w-full h-screen hidden md:block" src="images\login_screen.jpg" >
+    </div>
+</div>
+
+<MatSnackbar @bind-IsOpen="@snackBarIsOpen" Timeout="3000">
+    <MatSnackbarContent><b>Pogrešno korisničko ime ili password</b></MatSnackbarContent>
+</MatSnackbar>
+
+@code {
+    private User userLogIn = new User();
+    private string passwordLogIn = string.Empty;
+    private string porukaZaPrikaz = string.Empty;
+    bool snackBarIsOpen;
+    bool ShowRegistration;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await ProtoServis.ProveriKorisnikaAsync(new EmptyMsg());
+        ShowRegistration = response.Success;
+        StateHasChanged();
+
+    }
+
+    private async void LogIn()
+    {
+        RegistrationMsg logInMsg = new RegistrationMsg();
+        userLogIn.UserName ??= string.Empty;
+        passwordLogIn ??= string.Empty;
+        logInMsg.Username = userLogIn.UserName;
+        logInMsg.Password = passwordLogIn;
+        logInMsg.Login = true;
+        var Response = await ProtoServis.LogInAsync(logInMsg);
+        porukaZaPrikaz = Response.Error;
+        if (Response.Success)
+        {
+            _navigationManager.NavigateTo("/posta", true);
+        }
+        else
+        {
+            snackBarIsOpen = true;
+        }
+        StateHasChanged();
+    }
+
+}

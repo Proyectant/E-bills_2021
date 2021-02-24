@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+@using ERacuniNovi.Client.Shared 
+<AuthorizeView>
+    <Authorized>
+
+        <div class="page">
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+
+            <div class="main">
+                <div class="content px-4">
+                    @Body
+                </div>
+            </div>
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        <LoginTailwind></LoginTailwind>
+</NotAuthorized>
+</AuthorizeView>
+
+@code{
+
+}
